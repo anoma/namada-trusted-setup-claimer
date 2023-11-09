@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-[a-z]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to release."
+        required: true
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  GIT_LFS_SKIP_SMUDGE: 1
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: full
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        make:
+          - name: Build package
+            command: build --release
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git fetch --tags --force origin # WA: https://github.com/actions/checkout/issues/882
+      - name: Switch to tag if specified
+        if: "${{ github.event.inputs.tag != '' }}"
+        run: git checkout ${{ github.event.inputs.tag }}
+      - name: Setup rust toolchain
+        uses: oxidecomputer/actions-rs_toolchain@ad3f86084a8a5acf2c09cb691421b31cf8af7a36
+        with:
+          profile: minimal
+          override: true
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+      - name: ${{ matrix.make.name }}
+        run: make ${{ matrix.make.command }}
+      - name: Upload binaries package
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-${{ matrix.os }}-${{ github.sha }}
+          path: ./*.tar.gz
+
+  release:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    if: success() || failure()
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      - name: Download release artifacts
+        uses: actions/download-artifact@v3
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: ./**/*.tar.gz
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Namada Trusted Setup Claimer ${{ steps.get_version.outputs.version-without-v }}

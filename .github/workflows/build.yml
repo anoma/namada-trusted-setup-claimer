@@ -27,8 +27,8 @@ jobs:
         with:
           profile: default
           override: true
-      - name: Cache cargo registry
-        uses: actions/checkout@v3
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build --release
 
