@@ -6,9 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 bip39 = {version = "1.0.1", default-features = false}
-clap = { version = "4.4.7", features = ["derive"] }
 ed25519-compact = "1.0.11"
 hex = "0.4.3"
-rpassword = "7.2.0"
 zeroize = "1.6.0"
 inquire = "0.6.2"
