@@ -24,7 +24,8 @@ struct Context {
 fn main() -> anyhow::Result<()> {
     let context = {
         let seed_phrase = inquire::Password::new(consts::MNEMONIC_PROMPT)
-            .with_display_mode(inquire::PasswordDisplayMode::Masked);
+            .with_display_mode(inquire::PasswordDisplayMode::Full)
+            .without_confirmation();
 
         let mnemonic_phrase = seed_phrase.prompt().map(Zeroizing::new)?;
         Context::new(&mnemonic_phrase)?
